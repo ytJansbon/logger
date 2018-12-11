@@ -1,2 +1,2 @@
 # logger
-An asynchronous log module that supports automatic sharding by time and file size.
+An asynchronous log module that supports automatic sharding by date for file size.
