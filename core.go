@@ -11,24 +11,26 @@ import (
 )
 
 const (
-	MAX_LOGCHAN_BUFFER_SIZE   = 2048 //channel buffer size
-	CHECK_SLICE_FILE_INTERVAL = 180  //check slice file interval time
+	CHECK_SLICE_FILE_INTERVAL = 180 //check slice file interval time
+	CHANGE_LINE_FLAG          = "\n"
 )
 
 const (
-	DEFAULT_CONSOLE_VALUE   = true
-	DEFAULT_SLICETYPE_VALUE = 0
-	DEFAULT_PREFIX_VALUE    = ""
-	DEFAULT_LEVEL_VALUE     = Level_Info
-	DEFAULT_FILEDIR_VALUE   = "./log"
-	DEFAULT_FILENAME_VALUE  = "logfile.log"
-	DEFAULT_FILECOUNT_VALUE = 3
-	DEFAULT_FILESIZE_VALUE  = 1024 * 1024 * 3
+	DEFAULT_BUFFERSIZE_VALUE = 2048 //channel buffer size
+	DEFAULT_CONSOLE_VALUE    = true
+	DEFAULT_SLICETYPE_VALUE  = 0
+	DEFAULT_PREFIX_VALUE     = ""
+	DEFAULT_LEVEL_VALUE      = Level_Info
+	DEFAULT_FILEDIR_VALUE    = "./log"
+	DEFAULT_FILENAME_VALUE   = "logfile.log"
+	DEFAULT_FILECOUNT_VALUE  = 3
+	DEFAULT_FILESIZE_VALUE   = 1024 * 1024 * 3
 )
 
 type logHandler struct {
-	dataChan chan string
-	lock     *sync.Mutex
+	dataChan   chan string
+	bufferSize int
+	lock       *sync.Mutex
 
 	console   bool
 	sliceType SliceType
@@ -55,7 +57,7 @@ func (lh *logHandler) init(config string) error {
 
 	//init channels
 	lh.lock = new(sync.Mutex)
-	lh.dataChan = make(chan string, MAX_LOGCHAN_BUFFER_SIZE)
+	lh.dataChan = make(chan string, lh.bufferSize)
 
 	//init arguments
 	if !isPathExist(lh.fileDir) {
@@ -91,6 +93,13 @@ func (lh *logHandler) validate(config string) error {
 	if err != nil {
 		return errors.New("validate log config failed, err: " + err.Error())
 	}
+	//validate bufferSize
+	bufferSize, err := js.Get("bufferSize").Int()
+	if err == nil && bufferSize >= 1024 {
+		lh.bufferSize = bufferSize
+	} else {
+		lh.bufferSize = DEFAULT_BUFFERSIZE_VALUE
+	}
 	//validate console
 	console, err := js.Get("console").Bool()
 	if err == nil {
@@ -107,8 +116,8 @@ func (lh *logHandler) validate(config string) error {
 	}
 	//validate prefix
 	prefix, err := js.Get("prefix").String()
-	if err == nil {
-		lh.prefix = prefix
+	if err == nil && prefix != "" {
+		lh.prefix = "[" + prefix + "] "
 	} else {
 		lh.prefix = DEFAULT_PREFIX_VALUE
 	}
@@ -180,17 +189,17 @@ func (lh *logHandler) inputData(level int, data string) {
 	content := time.Now().Format("2006-01-02 15:04:05")
 	switch level {
 	case Level_All:
-		data = content + " [All]:" + lh.prefix + data
+		data = content + " [All] " + lh.prefix + data
 	case Level_Debug:
-		data = content + " [Debug]:" + lh.prefix + data
+		data = content + " [Debug] " + lh.prefix + data
 	case Level_Info:
-		data = content + " [Info]:" + lh.prefix + data
+		data = content + " [Info] " + lh.prefix + data
 	case Level_Warn:
-		data = content + " [Warn]:" + lh.prefix + data
+		data = content + " [Warn] " + lh.prefix + data
 	case Level_Error:
-		data = content + " [Error]:" + lh.prefix + data
+		data = content + " [Error] " + lh.prefix + data
 	case Level_Fatal:
-		data = content + " [Fatal]:" + lh.prefix + data
+		data = content + " [Fatal] " + lh.prefix + data
 	default:
 		return
 	}
@@ -212,6 +221,7 @@ func (lh *logHandler) outputToFile(data string) {
 	if lh.fileHandle == nil {
 		return
 	}
+	data += CHANGE_LINE_FLAG
 	lh.fileHandle.Write([]byte(data))
 }
 

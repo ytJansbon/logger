@@ -19,8 +19,9 @@ const (
 )
 
 func NewLogger(config string) (*Logger, error) {
-
-	return nil, nil
+	obj := &Logger{}
+	err := obj.init(config)
+	return obj, err
 }
 
 type Logger struct {
