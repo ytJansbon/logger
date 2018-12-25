@@ -2,6 +2,7 @@ package logger
 
 import "fmt"
 
+//log level
 const (
 	Level_All = iota
 	Level_Debug
@@ -11,11 +12,20 @@ const (
 	Level_Fatal
 )
 
+//the output type of logs
+type OutputType byte
+
+const (
+	OutputType_all     OutputType = iota //both output to file and console
+	OutputType_console                   //only output to console
+	OutputType_file                      //only output to file
+)
+
 type SliceType byte
 
 const (
-	SliceType_Size SliceType = iota
-	SliceType_Date
+	SliceType_Size SliceType = iota //slice file by file size
+	SliceType_Date                  //slice file by date
 )
 
 func NewLogger(config string) (*Logger, error) {

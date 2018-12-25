@@ -29,6 +29,7 @@ func joinFilePath(dir string, file string) string {
 	return filepath.Join(dir, file)
 }
 
+//get file size by path
 func getFileSize(path string) uint64 {
 	info, err := os.Stat(path)
 	if err != nil {

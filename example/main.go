@@ -16,9 +16,9 @@ func main() {
 		"\"fileName\":\"example.log\"," +
 		"\"fileSize\":%d," +
 		"\"fileCount\":5," +
-		"\"console\":false" +
+		"\"outputType\":%d" +
 		"}"
-	config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1)
+	config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1, logger.OutputType_console)
 	logger, err := logger.NewLogger(config)
 	if err != nil {
 		fmt.Println("logger new error:", err.Error())

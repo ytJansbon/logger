@@ -17,7 +17,7 @@ const (
 
 const (
 	DEFAULT_BUFFERSIZE_VALUE = 2048 //channel buffer size
-	DEFAULT_CONSOLE_VALUE    = true
+	DEFAULT_OUTPUTTYPE_VALUE = OutputType_console
 	DEFAULT_SLICETYPE_VALUE  = 0
 	DEFAULT_PREFIX_VALUE     = ""
 	DEFAULT_LEVEL_VALUE      = Level_Info
@@ -32,10 +32,10 @@ type logHandler struct {
 	bufferSize int
 	lock       *sync.Mutex
 
-	console   bool
-	sliceType SliceType
-	prefix    string
-	level     int
+	outputType OutputType
+	sliceType  SliceType
+	prefix     string
+	level      int
 
 	curDate    *time.Time
 	fileHandle *os.File
@@ -60,25 +60,27 @@ func (lh *logHandler) init(config string) error {
 	lh.dataChan = make(chan string, lh.bufferSize)
 
 	//init arguments
-	if !isPathExist(lh.fileDir) {
-		os.Mkdir(lh.fileDir, 0755)
-	}
-	filePath := joinFilePath(lh.fileDir, lh.fileName)
-	if lh.sliceType == SliceType_Size {
-		for i := 0; i != lh.fileCount; i++ {
-			if isPathExist(filePath + "." + strconv.Itoa(i)) {
-				break
-			}
-			lh.fileIndex = i
+	if lh.outputType == OutputType_all || lh.outputType == OutputType_file {
+		if !isPathExist(lh.fileDir) {
+			os.Mkdir(lh.fileDir, 0755)
 		}
-	} else {
-		lh.curDate = getCurrentDate()
+		filePath := joinFilePath(lh.fileDir, lh.fileName)
+		if lh.sliceType == SliceType_Size {
+			for i := 0; i != lh.fileCount; i++ {
+				if isPathExist(filePath + "." + strconv.Itoa(i)) {
+					break
+				}
+				lh.fileIndex = i
+			}
+		} else {
+			lh.curDate = getCurrentDate()
+		}
+		lh.fileHandle, err = os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			return errors.New("init logger failed, err: " + err.Error())
+		}
+		lh.checkSliceFile()
 	}
-	lh.fileHandle, err = os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		return errors.New("init logger failed, err: " + err.Error())
-	}
-	lh.checkSliceFile()
 
 	//start go workers
 	go lh.outputDataWorker()
@@ -101,11 +103,11 @@ func (lh *logHandler) validate(config string) error {
 		lh.bufferSize = DEFAULT_BUFFERSIZE_VALUE
 	}
 	//validate console
-	console, err := js.Get("console").Bool()
+	outputtype, err := js.Get("outputType").Int()
 	if err == nil {
-		lh.console = console
+		lh.outputType = OutputType(outputtype)
 	} else {
-		lh.console = DEFAULT_CONSOLE_VALUE
+		lh.outputType = DEFAULT_OUTPUTTYPE_VALUE
 	}
 	//validate sliceType
 	slicetype, err := js.Get("sliceType").Int()
@@ -208,10 +210,12 @@ func (lh *logHandler) inputData(level int, data string) {
 
 //output log data to console or file
 func (lh *logHandler) outputData(data string) {
-	if lh.console {
+	if lh.outputType == OutputType_all || lh.outputType == OutputType_console {
 		lh.outputToConsole(data)
 	}
-	lh.outputToFile(data)
+	if lh.outputType == OutputType_all || lh.outputType == OutputType_file {
+		lh.outputToFile(data)
+	}
 }
 
 //output log data to file
@@ -232,6 +236,9 @@ func (lh *logHandler) outputToConsole(data string) {
 
 //check slice file
 func (lh *logHandler) checkSliceFile() {
+	if lh.outputType != OutputType_all && lh.outputType != OutputType_file {
+		return
+	}
 	lh.lock.Lock()
 	defer lh.lock.Unlock()
 	if lh.sliceType == SliceType_Size {
