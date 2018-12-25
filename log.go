@@ -30,7 +30,7 @@ const (
 
 func NewLogger(config string) (*Logger, error) {
 	obj := &Logger{}
-	err := obj.init(config)
+	err := obj.Init(config)
 	return obj, err
 }
 
@@ -38,7 +38,7 @@ type Logger struct {
 	handler *logHandler
 }
 
-func (lg *Logger) init(config string) error {
+func (lg *Logger) Init(config string) error {
 	if lg.handler == nil {
 		lg.handler = new(logHandler)
 		err := lg.handler.init(config)
