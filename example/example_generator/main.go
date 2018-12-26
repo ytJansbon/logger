@@ -27,5 +27,5 @@ func main() {
 
 	logger.Info("test logger info")
 	time.Sleep(time.Duration(5) * time.Second)
-	fmt.Println("test end")
+	fmt.Println("test example_generator end")
 }

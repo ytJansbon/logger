@@ -28,6 +28,17 @@ const (
 	SliceType_Date                  //slice file by date
 )
 
+var ins *Logger
+
+// This is the singleton interface
+func InsLogger() *Logger {
+	if ins == nil {
+		ins = &Logger{}
+	}
+	return ins
+}
+
+// This is the object generator interface
 func NewLogger(config string) (*Logger, error) {
 	obj := &Logger{}
 	err := obj.Init(config)
