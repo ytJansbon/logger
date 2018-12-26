@@ -19,9 +19,9 @@ go get -u github.com/ytJansbon/logger
    		"\"fileName\":\"example.log\"," +
    		"\"fileSize\":%d," +
    		"\"fileCount\":5," +
-   		"\"outputType\":%d" +
-   		"}"
-   	config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1, logger.OutputType_console)
+		"\"outputType\":%d," +
+		"\"level\":%d}}"
+	config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1, logger.OutputType_console, logger.Level_All)
    
    	err = logger.InsLogger().Init(config)
    	if err != nil {
@@ -42,9 +42,10 @@ go get -u github.com/ytJansbon/logger
     	"\"fileName\":\"example.log\"," +
     	"\"fileSize\":%d," +
     	"\"fileCount\":5," +
-    	"\"outputType\":%d" +
-    	"}"
-    config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1, logger.OutputType_console)
+		"\"outputType\":%d," +
+		"\"level\":%d}}"
+	config = fmt.Sprintf(config, user.HomeDir+"/log", 1024*1024*1, logger.OutputType_console, logger.Level_All)
+	
    	logger, err := logger.NewLogger(config)
    	if err != nil {
    		fmt.Println("logger new error:", err.Error())
